@@ -1,6 +1,6 @@
 import json
 
-import utils
+from . import utils
 
 
 class Order:
@@ -79,7 +79,7 @@ class Unit:
             return
 
         self.orders = []
-        for i in xrange(0, n_orders):
+        for i in range(0, n_orders):
             self.orders.append(Order())
             self.orders[i].first_frame, c = utils.get_int(args, c)
             self.orders[i].type, c = utils.get_int(args, c)
@@ -209,7 +209,7 @@ class Frame:
         def in_radius(ux, uy):
             return (x / 8 - ux) * (x / 8 - ux) + (y / 8 - uy) * (y / 8 - uy) <= 20 * 4 * 20 * 4
 
-        for player in self.units.items():
+        for player in list(self.units.items()):
             o.units[player[0]] = []
             for unit in player[1]:
                 if in_radius(unit.x, unit.y):
@@ -236,7 +236,7 @@ class Frame:
 
     def combine(self, next_frame):
         # For units, accumulate presence and commands
-        for player in next_frame.units.items():
+        for player in list(next_frame.units.items()):
             player_id = player[0]
             player_units = player[1]
 
@@ -246,7 +246,7 @@ class Frame:
 
             # Build dictionary of uid -> position in current frame unit vector
             idx = {}
-            for i in xrange(0, len(self.units[player_id])):
+            for i in range(0, len(self.units[player_id])):
                 idx[self.units[player_id][i].id] = i
             # Iterate over units in next frame
             for unit in player_units:
@@ -281,14 +281,14 @@ class Frame:
         if n_player < 0:
             utils.print_err("Corrupted replay: units n_player < 0")
             return
-        for i in xrange(0, n_player):
+        for i in range(0, n_player):
             id_player, c = utils.get_int(args, c)
             n_units, c = utils.get_int(args, c)
             if n_units < 0:
                 utils.print_err("Corrupted replay: n_units < 0")
                 return
             self.units[id_player] = []
-            for j in xrange(0, n_units):
+            for j in range(0, n_units):
                 self.units[id_player].append(Unit())
                 c = self.units[id_player][j].read(args, c)
 
@@ -296,14 +296,14 @@ class Frame:
         if n_player < 0:
             utils.print_err("Corrupted replay: actions n_player < 0")
             return
-        for i in xrange(0, n_player):
+        for i in range(0, n_player):
             id_player, c = utils.get_int(args, c)
             n_actions, c = utils.get_int(args, c)
             if n_actions < 0:
                 utils.print_err("Corrupted replay: n_actions < 0")
                 return
             self.actions[id_player] = []
-            for j in xrange(0, n_actions):
+            for j in range(0, n_actions):
                 self.actions[id_player].append(Action())
                 self.actions[id_player][j].uid, c = utils.get_int(args, c)
                 self.actions[id_player][j].aid, c = utils.get_int(args, c)
@@ -313,14 +313,14 @@ class Frame:
                     return
 
                 self.actions[id_player][j].action = [0] * size_a
-                for k in xrange(0, size_a):
+                for k in range(0, size_a):
                     self.actions[id_player][j].action[k], c = utils.get_int(args, c)
 
         n_player, c = utils.get_int(args, c)
         if n_player < 0:
             utils.print_err("Corrupted replay: resources n_player < 0")
             return
-        for i in xrange(0, n_player):
+        for i in range(0, n_player):
             id_player, c = utils.get_int(args, c)
             self.resources[id_player] = Resources()
             c = self.resources[id_player].read(args, c)
@@ -329,7 +329,7 @@ class Frame:
         if n_bullets < 0:
             utils.print_err("Corrupted replay: n_bullets < 0")
             return
-        for i in xrange(0, n_bullets):
+        for i in range(0, n_bullets):
             self.bullets.append(Bullet())
             c = self.bullets[i].read(args, c)
         self.reward, c = utils.get_int(args, c)
@@ -338,19 +338,19 @@ class Frame:
 
     def __str__(self):
         s = utils.to_str(len(self.units), " ")
-        for v in self.units.items():
+        for v in list(self.units.items()):
             s += utils.to_str(v[0], " ", len(v[1]), " ")
             for u in v[1]:
                 s += utils.to_str(u, " ")
         s += utils.to_str(len(self.actions), " ")
-        for v in self.actions.items():
+        for v in list(self.actions.items()):
             s += utils.to_str(v[0], " ", len(v[1]), " ")
             for u in v[1]:
                 s += utils.to_str(u.uid, " ", u.aid, " ", len(u.action), " ")
                 for a in u.action:
                     s += utils.to_str(a, " ")
         s += utils.to_str(len(self.resources), " ")
-        for r in self.resources.items():
+        for r in list(self.resources.items()):
             s += utils.to_str(r[0], " ", r[1], " ")
         s += utils.to_str(len(self.bullets), " ")
         for b in self.bullets:

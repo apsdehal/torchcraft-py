@@ -6,7 +6,7 @@ VERSION = '16'
 # Build reverted index
 def _build_index(t):
     tmp = []
-    for k, v in t.iteritems():
+    for k, v in t.items():
         tmp.append(k)
     for k in tmp:
         t[t[k]] = k

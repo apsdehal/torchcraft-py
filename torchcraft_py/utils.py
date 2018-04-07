@@ -29,7 +29,7 @@ def get_bool(b):
 
 def get_int(args, c):
     if type(args) != list:
-        print 'Error'
+        print('Error')
         return -1
 
     i = int(args[c])
@@ -80,7 +80,7 @@ def parse_list(s):
 def get_weakest(units_table):
     min_total_hp = 1E30
     weakest_uid = -1
-    for uid, ut in units_table.iteritems():
+    for uid, ut in units_table.items():
         if ut is None:
             continue
         tmp_hp = ut.health + ut.shield
@@ -91,6 +91,6 @@ def get_weakest(units_table):
 
 
 def progress(nloop, battles_won, battles_game, total_battles):
-    print "Loop: %5d | WinRate: %1.3f | #Wins: %4d | #Battles: %4d | #TotalBattles: %4d" % (
+    print("Loop: %5d | WinRate: %1.3f | #Wins: %4d | #Battles: %4d | #TotalBattles: %4d" % (
         nloop, battles_won / (battles_game + 1E-6), battles_won, battles_game,
-        total_battles)
+        total_battles))

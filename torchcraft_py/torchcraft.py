@@ -1,10 +1,9 @@
-import zmq
+import torchcraft as tc
+from . import frame
+from . import proto
+from . import utils
 
-import frame
-import proto
-import utils
-
-DEBUG = 0  # Can take values 0, 1, 2 (from no output to most verbose)
+DEBUG = 2  # Can take values 0, 1, 2 (from no output to most verbose)
 
 mode = {'micro_battles': True, 'replay': False}
 
@@ -14,8 +13,9 @@ class Client:
         assert (server_ip != ''), "Server ip cannot be empty"
         assert (server_port != ''), "Server port cannot be empty"
 
-        self.server = "tcp://" + server_ip + ":" + server_port
-        self.socket = None
+        self.server_ip = server_ip
+        self.server_port = server_port
+        self.socket = tc.Client()
         self.message_just_sent = False
 
         self.state = ServerState()
@@ -28,36 +28,31 @@ class Client:
                         'units_myself': {},
                         'units_enemy': {}}
         if DEBUG > 0:
-            print "Connecting to the TorchCraft server: " + self.server
-        context = zmq.Context()
-        self.socket = context.socket(zmq.REQ)
-        self.socket.connect(self.server)
-
-        # Send hello message
-        hello = "protocol=" + proto.VERSION + ",micro_mode=" \
-                + str(mode['micro_battles'])
-        self.socket.send(hello)
-
+            print("Connecting to the TorchCraft server: " + self.server_ip, 
+                   self.server_port)
+        self.socket.connect(self.server_ip, self.server_port)
+        
         # Receive setup message
-        msg = self.socket.recv()
+        msg = self.socket.init(micro_battles=True)
         self.state.parse(msg)
 
         self.message_just_sent = False
         if DEBUG > 0:
-            print "TorchCraft server connected"
+            print("TorchCraft server connected")
 
         return msg
 
     def receive(self):
         if not self.message_just_sent:
             if DEBUG > 1:
-                print 'Unexpectedly sending ""'
+                print('Unexpectedly sending ""')
             self.send("")
 
         if not self.socket.poll(30000):  # 30 secs
             raise IOError("Timeout, TorchCraft server probably crashed")
 
         msg = self.socket.recv()
+
         self.state.parse(msg)
         self.state.update()
 
@@ -69,19 +64,9 @@ class Client:
         if self.message_just_sent:
             tmp = self.receive()
             if DEBUG > 1:
-                print "Unexpectedly received: " + tmp
+                print("Unexpectedly received: " + tmp)
 
-        if type(msg) is list:
-            result = ""
-            for v in msg:
-                if result != "":
-                    result = result + ":" + str(v)
-                else:
-                    result = str(v)
-            self.socket.send(result)
-        else:
-            self.socket.send(msg)
-
+        self.socket.send(msg)
         self.message_just_sent = True
 
     def close(self):
@@ -109,16 +94,17 @@ class ServerState:
         self.d = dict()
 
     def parse(self, msg):
-        t = utils.parse_table(msg)
-        for k, v in t.iteritems():
+        t = msg
+        for k in dir(t):
+            if k.startswith('__'):
+                continue
             if k == 'frame':
-                self.d['frame_string'] = v
-                self.d['frame'] = frame.Frame.parse_from(v)
+                self.d['frame'] = getattr(t, k)
             elif k == 'deaths':
-                self.d['deaths'] = utils.parse_list(v)
+                self.d['deaths'] = getattr(t, k)
             else:
-                self.d[k] = v
-
+                self.d[k] = getattr(t, k)
+        
     def update(self):
         if mode['micro_battles']:
             self.d['battle_just_ended'] = False
